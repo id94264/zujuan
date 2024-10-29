@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         组卷网隐藏元素打印
 // @namespace    https://github.com/id94264/zujuan
-// @version      20241029v1.0
+// @version      1.1
 // @description  组卷网组卷中心隐藏无关元素，打印试题
 // @author       id94264
 // @match        https://zujuan.xkw.com/zujuan
