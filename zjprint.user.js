@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         组卷网隐藏元素打印
-// @namespace    https://github.com/id94264/zujuan
-// @version      2.0
+// @namespace    https://github.com/id94264/zujuan/
+// @version      2.1
 // @description  组卷网的组卷中心隐藏无关元素，打印试题
 // @author       id94264
-// @match        https://zujuan.xkw.com/zujuan
+// @match        https://zujuan.xkw.com/zujuan/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xkw.com
 // @updateURL    https://github.com/id94264/zujuan/raw/main/zjprint.user.js
 // @downloadURL  https://github.com/id94264/zujuan/raw/main/zjprint.user.js
