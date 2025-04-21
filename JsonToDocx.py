@@ -157,8 +157,8 @@ class ImageProcessor:
                 run.add_picture(img_bytes, height=img_height)
                 
                 # 对于大图片且不在选项中的，添加换行
-                if self.should_standalone(img, is_in_options):
-                    run.add_break(WD_BREAK.LINE)
+                # if self.should_standalone(img, is_in_options):
+                #     run.add_break(WD_BREAK.LINE)
                 
                 return True
         except Exception as e:
