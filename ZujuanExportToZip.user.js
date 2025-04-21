@@ -8,8 +8,8 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_download
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js
-// updateURL     https://github.com/id94264/zujuan/releases/latest/download/ZujuanExportToZip.user.js
-// downloadURL   https://github.com/id94264/zujuan/releases/latest/download/ZujuanExportToZip.user.js
+// @updateURL     https://github.com/id94264/zujuan/releases/latest/download/ZujuanExportToZip.user.js
+// @downloadURL   https://github.com/id94264/zujuan/releases/latest/download/ZujuanExportToZip.user.js
 // @connect      *
 // ==/UserScript==
 
