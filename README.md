@@ -10,4 +10,4 @@ ZujuanExportToZip：将试题内容和图片打包为ZIP下载
 JsonToDocx.py：zip解压的json和img转为docx
 
 PageElementTweaking.user.js：允许隐藏和修改网页元素，支持批量编辑和默认修改样式
-[点击安装]()
+[点击安装](https://github.com/id94264/zujuan/raw/main/PageElementTweaking.user.js)
