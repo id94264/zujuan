@@ -13,7 +13,8 @@
 // @version     2.0
 // @author      AI & id94264
 // @description 允许隐藏和修改网页元素，支持批量编辑和默认修改样式
-// @updateURL
+// @updateURL     https://github.com/id94264/zujuan/raw/main/PageElementTweaking.user.js
+// @downloadURL   https://github.com/id94264/zujuan/raw/main/PageElementTweaking.user.js
 // ==/UserScript==
 
 (function() {
