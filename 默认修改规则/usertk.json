@@ -1,0 +1,72 @@
+{
+  "type": "page_modifications",
+  "hideModifications": [
+    "div.top-bar",
+    "div.fn-box",
+    "div.fixed-box",
+    "nav.main-nav",
+    "div.bread-nav",
+    "aside.other-info",
+    "div.fiexd-nav",
+    "div.footer",
+    "div.ctrl-box:nth-of-type(2)",
+    "div.exam-item__info.clearfix:nth-of-type(4)",
+    "remove-web-limits-iqxin#rwl-iqxin",
+    "em.tag"
+  ],
+  "styleModifications": {
+    "main.page.exam-detail.clearfix": {
+      "font-family": "\"Simsun\", \"Microsoft YaHei\", \"PingFang SC\", \"Alibaba PuHuiTi 2.0\", Helvetica, Tahoma, Arial, sana-serif",
+      "width": "100%",
+      "max-width": "100%",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "article.exam-cnt": {
+      "width": "100%",
+      "line-height": "1.5"
+    },
+    "div.tk-quest-item.quesroot": {
+      "width": "100%",
+      "padding": "0px",
+      "margin": "0px",
+      "line-height": "1.5"
+    },
+    "div.exam-item__cnt": {
+      "line-height": "1.5",
+      "font-family": "\"Simsun\", \"Microsoft YaHei\", \"PingFang SC\", \"Alibaba PuHuiTi 2.0\", Helvetica, Tahoma, Arial, sana-serif"
+    },
+    "div.wrapper.quesdiv": {
+      "width": "100%",
+      "padding": "0px",
+      "font-weight": "normal",
+      "font-family": "\"Simsun\", \"Microsoft YaHei\", \"PingFang SC\", \"Alibaba PuHuiTi 2.0\", Helvetica, Tahoma, Arial, sana-serif"
+    },
+    "span.title-txt": {
+      "font-weight": "bold",
+      "line-height": "1.5"
+    },
+    "div.sec-item": {
+      "margin": "0px",
+      "line-height": "1.5"
+    },
+    "h4.sec-title.clearfix": {
+      "padding": "0px",
+      "margin": "0px",
+      "font-weight": "bold",
+      "line-height": "1.5"
+    },
+    "h2.exam-title.clearfix": {
+      "padding": "0px",
+      "margin": "0px"
+    },
+    "td": {
+      "padding": "0px",
+      "margin": "0px"
+    },
+    "div.wrapper.quesdiv.selected-mask": {
+      "opacity": "1"
+    }
+  },
+  "pageUrl": "https://zujuan.xkw.com/usertk/4p*.html"
+}
