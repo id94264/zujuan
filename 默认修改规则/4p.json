@@ -85,7 +85,10 @@
     },
     "div.wrapper.quesdiv.selected-mask": {
       "opacity": "1"
-    }
+    },
+  "h2.exam-title.forestall": {
+    "margin": "0px"
+  }
   },
   "pageUrl": "https://zujuan.xkw.com/4p*"
 }
