@@ -9,7 +9,7 @@
 // @grant       GM_registerMenuCommand
 // @grant       GM_download
 // @icon        
-// @version     3.6.24
+// @version     3.6.27
 // @author      AI & id94264
 // @description 允许隐藏和修改网页元素
 // @updateURL   https://github.com/id94264/zujuan/raw/main/PageElementTweaking.user.js
@@ -29,6 +29,7 @@
 
     // UI配置
     const UI_CONFIG = {
+        MARKER_ATTR: 'data-element-tweak-ui', // 标记脚本UI元素，防止被样式修改影响
         PANEL: {
             width: '420px',
             maxHeight: '80vh',
@@ -181,9 +182,16 @@
             if (StorageManager.getPauseState()) return;
 
             const modifications = StorageManager.getHideModifications();
+            const markerAttr = UI_CONFIG.MARKER_ATTR;
             modifications.forEach(selector => {
                 try {
                     document.querySelectorAll(selector).forEach(el => {
+                        // 排除脚本UI元素及其子元素
+                        let parent = el;
+                        while (parent && parent !== document.body) {
+                            if (parent.hasAttribute && parent.hasAttribute(markerAttr)) return;
+                            parent = parent.parentNode;
+                        }
                         el.style.display = 'none';
                     });
                 } catch (e) {
@@ -196,9 +204,16 @@
             if (StorageManager.getPauseState()) return;
 
             const modifications = StorageManager.getStyleModifications();
+            const markerAttr = UI_CONFIG.MARKER_ATTR;
             Object.keys(modifications).forEach(selector => {
                 try {
                     document.querySelectorAll(selector).forEach(el => {
+                        // 排除脚本UI元素及其子元素
+                        let parent = el;
+                        while (parent && parent !== document.body) {
+                            if (parent.hasAttribute && parent.hasAttribute(markerAttr)) return;
+                            parent = parent.parentNode;
+                        }
                         Object.keys(modifications[selector]).forEach(prop => {
                             el.style[prop] = modifications[selector][prop];
                         });
@@ -246,6 +261,7 @@
     class UIManager {
         static createButton(text, type = 'secondary', onClick = null) {
             const button = document.createElement('button');
+            button.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             button.textContent = text;
             button.style.padding = '8px 16px';
             button.style.borderRadius = '4px';
@@ -274,6 +290,7 @@
 
         static createInput(placeholder, type = 'text') {
             const input = document.createElement('input');
+            input.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             input.type = type;
             input.placeholder = placeholder;
             input.style.padding = '8px';
@@ -287,6 +304,7 @@
 
         static createTextarea(placeholder) {
             const textarea = document.createElement('textarea');
+            textarea.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             textarea.placeholder = placeholder;
             textarea.style.padding = '8px';
             textarea.style.border = '1px solid #dadce0';
@@ -344,6 +362,7 @@
 
         static createPanel() {
             const panel = document.createElement('div');
+            panel.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             panel.style.position = 'fixed';
             panel.style.top = '60px';
             panel.style.right = '15px';
@@ -671,6 +690,7 @@
 
         static showStyleEditor(selector, styles, onSaveCallback) {
             const panel = document.createElement('div');
+            panel.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             panel.style.position = 'fixed';
             panel.style.top = '50%';
             panel.style.left = '50%';
@@ -688,6 +708,7 @@
 
             // 关闭按钮
             const closeButton = document.createElement('button');
+            closeButton.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             closeButton.innerHTML = '&times;';
             closeButton.style.position = 'absolute';
             closeButton.style.top = '10px';
@@ -721,6 +742,7 @@
             selectorContainer.appendChild(selectorLabel);
 
             const selectorInput = document.createElement('input');
+            selectorInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             selectorInput.type = 'text';
             selectorInput.value = selector;
             selectorInput.style.flex = '1';
@@ -742,6 +764,7 @@
             selectorTypeContainer.appendChild(selectorTypeLabel);
 
             const idRadio = document.createElement('input');
+            idRadio.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             idRadio.type = 'radio';
             idRadio.id = 'selector-type-id';
             idRadio.name = 'selector-type';
@@ -755,6 +778,7 @@
             selectorTypeContainer.appendChild(idLabel);
 
             const classRadio = document.createElement('input');
+            classRadio.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             classRadio.type = 'radio';
             classRadio.id = 'selector-type-class';
             classRadio.name = 'selector-type';
@@ -905,6 +929,7 @@
             styleEditArea.appendChild(styleEditTitle);
 
             const styleValueInput = document.createElement('input');
+            styleValueInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             styleValueInput.type = 'text';
             styleValueInput.style.width = 'calc(100% - 16px)';
             styleValueInput.style.padding = '8px';
@@ -1011,6 +1036,7 @@
 
             // 样式属性选择下拉框
             const stylePropSelect = document.createElement('select');
+            stylePropSelect.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             stylePropSelect.style.padding = '8px';
             stylePropSelect.style.border = '1px solid #dadce0';
             stylePropSelect.style.borderRadius = '4px';
@@ -1076,6 +1102,7 @@
             manualInputSection.appendChild(manualInputLabel);
 
             const newStylePropInput = document.createElement('input');
+            newStylePropInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             newStylePropInput.type = 'text';
             newStylePropInput.placeholder = '输入样式属性名称';
             newStylePropInput.style.padding = '8px';
@@ -1098,6 +1125,7 @@
             styleValueSection.appendChild(styleValueLabel);
 
             const newStyleValueInput = document.createElement('input');
+            newStyleValueInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             newStyleValueInput.type = 'text';
             newStyleValueInput.placeholder = '输入样式值';
             newStyleValueInput.style.padding = '8px';
@@ -1373,6 +1401,7 @@
             const importSection = document.createElement('div');
 
             const fileInput = document.createElement('input');
+            fileInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             fileInput.type = 'file';
             fileInput.accept = '.json';
             fileInput.style.display = 'none';
@@ -1481,6 +1510,7 @@
             });
 
             const fileInput = document.createElement('input');
+            fileInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             fileInput.type = 'file';
             fileInput.accept = '.json';
             fileInput.style.display = 'none';
@@ -1700,6 +1730,7 @@
 
         static showBulkEditModal(content, onSave) {
             const modal = document.createElement('div');
+            modal.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             modal.style.position = 'fixed';
             modal.style.top = '50%';
             modal.style.left = '50%';
@@ -1717,6 +1748,7 @@
 
             // 关闭按钮
             const closeButton = document.createElement('button');
+            closeButton.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             closeButton.innerHTML = '&times;';
             closeButton.style.position = 'absolute';
             closeButton.style.top = '15px';
@@ -1755,6 +1787,7 @@
             textareaContainer.style.flexDirection = 'column';
 
             const textarea = document.createElement('textarea');
+            textarea.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             textarea.style.width = '95%';
             textarea.style.height = '350px';
             textarea.style.marginBottom = '15px';
@@ -1854,6 +1887,7 @@
 
         static showDefaultModificationModal(existingPattern = null, existingMods = null) {
             const modal = document.createElement('div');
+            modal.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             modal.style.position = 'fixed';
             modal.style.top = '50%';
             modal.style.left = '50%';
@@ -1871,6 +1905,7 @@
 
             // 关闭按钮
             const closeButton = document.createElement('button');
+            closeButton.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             closeButton.innerHTML = '&times;';
             closeButton.style.position = 'absolute';
             closeButton.style.top = '15px';
@@ -1913,6 +1948,7 @@
             noteContainer.appendChild(noteLabel);
 
             const noteInput = document.createElement('input');
+            noteInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             noteInput.type = 'text';
             noteInput.placeholder = '输入备注信息，便于识别这个默认修改';
             noteInput.style.padding = '10px';
@@ -1938,6 +1974,7 @@
             urlContainer.appendChild(urlLabel);
 
             const urlInput = document.createElement('input');
+            urlInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             urlInput.type = 'text';
             urlInput.placeholder = '例如：baidu.com/*';
             urlInput.style.padding = '10px';
@@ -1963,6 +2000,7 @@
             jsonContainer.appendChild(jsonLabel);
 
             const jsonTextarea = document.createElement('textarea');
+            jsonTextarea.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             jsonTextarea.style.width = '95%';
             jsonTextarea.style.height = '200px';
             jsonTextarea.style.padding = '10px';
@@ -2159,6 +2197,7 @@
 
         static showDefaultModificationViewModal(pattern, mods) {
             const modal = document.createElement('div');
+            modal.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             modal.style.position = 'fixed';
             modal.style.top = '50%';
             modal.style.left = '50%';
@@ -2410,6 +2449,7 @@
 
         static showToast(message, type = 'info') {
             const toast = document.createElement('div');
+            toast.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
             toast.innerHTML = message;
             toast.style.position = 'fixed';
             toast.style.bottom = '20px';
