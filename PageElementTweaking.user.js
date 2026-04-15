@@ -9,7 +9,7 @@
 // @grant       GM_registerMenuCommand
 // @grant       GM_download
 // @icon        
-// @version     3.6.28
+// @version     3.6.30
 // @author      AI & id94264
 // @description 允许隐藏和修改网页元素
 // @updateURL   https://github.com/id94264/zujuan/raw/main/PageElementTweaking.user.js
@@ -404,7 +404,6 @@
             const tabs = [
                 { id: 'hide', text: '隐藏元素' },
                 { id: 'style', text: '样式修改' },
-                { id: 'head', text: 'Head修改' },
                 { id: 'importExport', text: '导入/导出' },
                 { id: 'default', text: '默认修改' }
             ];
@@ -460,9 +459,6 @@
                 case 'style':
                     UIManager.showStyleTab(container);
                     break;
-                case 'head':
-                    UIManager.showHeadTab(container);
-                    break;
                 case 'importExport':
                     UIManager.showImportExportTab(container);
                     break;
@@ -470,6 +466,103 @@
                     UIManager.showDefaultModificationsTab(container);
                     break;
             }
+        }
+
+        // 标题修改弹窗
+        static showTitleEditModal() {
+            const modal = document.createElement('div');
+            modal.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            modal.style.zIndex = '999998';
+            modal.style.display = 'flex';
+            modal.style.justifyContent = 'center';
+            modal.style.alignItems = 'center';
+
+            const content = document.createElement('div');
+            content.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
+            content.style.backgroundColor = '#fff';
+            content.style.borderRadius = '8px';
+            content.style.padding = '20px';
+            content.style.width = '90%';
+            content.style.maxWidth = '500px';
+            content.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.2)';
+
+            const titleEl = document.createElement('h3');
+            titleEl.textContent = '修改页面标题';
+            titleEl.style.margin = '0 0 15px 0';
+            titleEl.style.color = '#202124';
+            content.appendChild(titleEl);
+
+            const label = document.createElement('label');
+            label.textContent = '当前标题:';
+            label.style.display = 'block';
+            label.style.fontWeight = 'bold';
+            label.style.marginBottom = '5px';
+            content.appendChild(label);
+
+            const currentTitle = document.querySelector('title');
+            const preview = document.createElement('div');
+            preview.textContent = currentTitle ? currentTitle.textContent : '(无标题)';
+            preview.style.padding = '8px';
+            preview.style.backgroundColor = '#f8f9fa';
+            preview.style.borderRadius = '4px';
+            preview.style.marginBottom = '15px';
+            preview.style.fontSize = '13px';
+            preview.style.wordBreak = 'break-all';
+            content.appendChild(preview);
+
+            const inputLabel = document.createElement('label');
+            inputLabel.textContent = '新标题:';
+            inputLabel.style.display = 'block';
+            inputLabel.style.fontWeight = 'bold';
+            inputLabel.style.marginBottom = '5px';
+            content.appendChild(inputLabel);
+
+            const input = document.createElement('input');
+            input.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
+            input.value = currentTitle ? currentTitle.textContent : '';
+            input.style.width = '95%';
+            input.style.padding = '10px';
+            input.style.border = '1px solid #dadce0';
+            input.style.borderRadius = '4px';
+            input.style.fontSize = '14px';
+            content.appendChild(input);
+
+            const btnRow = document.createElement('div');
+            btnRow.style.display = 'flex';
+            btnRow.style.gap = '10px';
+            btnRow.style.marginTop = '20px';
+            btnRow.style.justifyContent = 'flex-end';
+
+            const cancelBtn = UIManager.createButton('取消', 'secondary', () => {
+                document.body.removeChild(modal);
+            });
+            btnRow.appendChild(cancelBtn);
+
+            const saveBtn = UIManager.createButton('保存', 'primary', () => {
+                const newTitle = input.value.trim();
+                if (currentTitle) {
+                    currentTitle.textContent = newTitle;
+                } else {
+                    const newTitleEl = document.createElement('title');
+                    newTitleEl.textContent = newTitle;
+                    document.head.appendChild(newTitleEl);
+                }
+                document.body.removeChild(modal);
+                this.showToast('标题已修改', 'success');
+            });
+            btnRow.appendChild(saveBtn);
+
+            content.appendChild(btnRow);
+            modal.appendChild(content);
+            document.body.appendChild(modal);
+
+            input.focus();
         }
 
         static showHideTab(container) {
@@ -589,7 +682,12 @@
             title.style.color = '#202124';
             container.appendChild(title);
 
-            // 批量操作按钮
+            // 批量操作按钮区域
+            const buttonRow = document.createElement('div');
+            buttonRow.style.display = 'flex';
+            buttonRow.style.gap = '10px';
+            buttonRow.style.marginBottom = '10px';
+
             const bulkEditButton = UIManager.createButton('批量编辑', 'primary', () => {
                 UIManager.showBulkEditModal(
                     JSON.stringify(StorageManager.getStyleModifications(), null, 2),
@@ -603,8 +701,15 @@
                     }
                 );
             });
-            bulkEditButton.style.marginBottom = '10px';
-            container.appendChild(bulkEditButton);
+            buttonRow.appendChild(bulkEditButton);
+
+            // 标题修改按钮
+            const titleEditButton = UIManager.createButton('标题修改', 'secondary', () => {
+                this.showTitleEditModal();
+            });
+            buttonRow.appendChild(titleEditButton);
+
+            container.appendChild(buttonRow);
 
             // 样式修改列表
             const modifications = StorageManager.getStyleModifications();
@@ -688,248 +793,6 @@
 
                 listContainer.appendChild(item);
             });
-
-            container.appendChild(listContainer);
-        }
-
-        static showHeadTab(container) {
-            container.innerHTML = '';
-
-            const title = document.createElement('h3');
-            title.textContent = 'Head 修改（当次生效，不保存）';
-            title.style.margin = '0 0 10px 0';
-            title.style.fontSize = '16px';
-            title.style.color = '#202124';
-            container.appendChild(title);
-
-            const description = document.createElement('p');
-            description.textContent = '对当前页面 head 元素的直接修改，仅当次生效，刷新页面后失效。';
-            description.style.margin = '0 0 15px 0';
-            description.style.fontSize = '12px';
-            description.style.color = '#666';
-            container.appendChild(description);
-
-            // 添加元素区域
-            const addSection = document.createElement('div');
-            addSection.style.marginBottom = '15px';
-            addSection.style.padding = '10px';
-            addSection.style.border = '1px solid #e0e0e0';
-            addSection.style.borderRadius = '4px';
-
-            const addTitle = document.createElement('div');
-            addTitle.textContent = '添加 Head 元素';
-            addTitle.style.fontWeight = 'bold';
-            addTitle.style.marginBottom = '10px';
-            addSection.appendChild(addTitle);
-
-            // 元素类型选择
-            const typeRow = document.createElement('div');
-            typeRow.style.display = 'flex';
-            typeRow.style.alignItems = 'center';
-            typeRow.style.marginBottom = '10px';
-            typeRow.style.gap = '10px';
-
-            const typeLabel = document.createElement('span');
-            typeLabel.textContent = '元素类型:';
-            typeLabel.style.fontSize = '13px';
-            typeRow.appendChild(typeLabel);
-
-            const typeSelect = document.createElement('select');
-            typeSelect.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
-            typeSelect.style.padding = '6px';
-            typeSelect.style.borderRadius = '4px';
-            typeSelect.style.border = '1px solid #dadce0';
-
-            ['meta', 'title', 'style', 'link', 'script', 'base', 'noscript', 'template'].forEach(type => {
-                const option = document.createElement('option');
-                option.value = type;
-                option.textContent = `<${type}>`;
-                typeSelect.appendChild(option);
-            });
-            typeRow.appendChild(typeSelect);
-            addSection.appendChild(typeRow);
-
-            // 属性输入
-            const attrsContainer = document.createElement('div');
-            attrsContainer.style.marginBottom = '10px';
-
-            const attrsTitle = document.createElement('div');
-            attrsTitle.textContent = '属性 (JSON格式，如 {"name":"description","content":"内容"})';
-            attrsTitle.style.fontSize = '12px';
-            attrsTitle.style.color = '#666';
-            attrsTitle.style.marginBottom = '5px';
-            attrsContainer.appendChild(attrsTitle);
-
-            const attrsInput = document.createElement('textarea');
-            attrsInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
-            attrsInput.placeholder = '{"name":"description","content":"页面描述"}';
-            attrsInput.style.width = '95%';
-            attrsInput.style.height = '60px';
-            attrsInput.style.padding = '8px';
-            attrsInput.style.border = '1px solid #dadce0';
-            attrsInput.style.borderRadius = '4px';
-            attrsInput.style.fontFamily = 'Consolas, monospace';
-            attrsInput.style.fontSize = '12px';
-            attrsInput.style.resize = 'vertical';
-            attrsContainer.appendChild(attrsInput);
-            addSection.appendChild(attrsContainer);
-
-            // 内容输入（用于 style, title, script 等）
-            const contentContainer = document.createElement('div');
-            contentContainer.style.marginBottom = '10px';
-
-            const contentTitle = document.createElement('div');
-            contentTitle.textContent = '元素内容 (可选)';
-            contentTitle.style.fontSize = '12px';
-            contentTitle.style.color = '#666';
-            contentTitle.style.marginBottom = '5px';
-            contentContainer.appendChild(contentTitle);
-
-            const contentInput = document.createElement('textarea');
-            contentInput.setAttribute(UI_CONFIG.MARKER_ATTR, 'true');
-            contentInput.placeholder = '元素内容，如 <style>body { color: red; }</style>';
-            contentInput.style.width = '95%';
-            contentInput.style.height = '80px';
-            contentInput.style.padding = '8px';
-            contentInput.style.border = '1px solid #dadce0';
-            contentInput.style.borderRadius = '4px';
-            contentInput.style.fontFamily = 'Consolas, monospace';
-            contentInput.style.fontSize = '12px';
-            contentInput.style.resize = 'vertical';
-            contentContainer.appendChild(contentInput);
-            addSection.appendChild(contentContainer);
-
-            // 添加按钮
-            const addButton = UIManager.createButton('添加到 Head', 'primary', () => {
-                const tagName = typeSelect.value;
-                const element = document.createElement(tagName);
-
-                // 解析并设置属性
-                const attrsText = attrsInput.value.trim();
-                if (attrsText) {
-                    try {
-                        const attrs = JSON.parse(attrsText);
-                        Object.keys(attrs).forEach(key => {
-                            element.setAttribute(key, attrs[key]);
-                        });
-                    } catch (e) {
-                        this.showToast('属性 JSON 格式错误: ' + e.message, 'error');
-                        return;
-                    }
-                }
-
-                // 设置内容
-                const content = contentInput.value;
-                if (content) {
-                    element.textContent = content;
-                }
-
-                document.head.appendChild(element);
-                this.showToast(`<${tagName}> 已添加到 head`, 'success');
-                attrsInput.value = '';
-                contentInput.value = '';
-                this.showHeadTab(container);
-            });
-            addSection.appendChild(addButton);
-            container.appendChild(addSection);
-
-            // 已添加元素列表
-            const listTitle = document.createElement('div');
-            listTitle.textContent = '已添加的 Head 元素';
-            listTitle.style.fontWeight = 'bold';
-            listTitle.style.marginBottom = '10px';
-            container.appendChild(listTitle);
-
-            // 显示当前 head 中的可修改元素
-            const listContainer = document.createElement('div');
-            listContainer.style.maxHeight = '300px';
-            listContainer.style.overflowY = 'auto';
-            listContainer.style.border = '1px solid #e0e0e0';
-            listContainer.style.borderRadius = '4px';
-            listContainer.style.padding = '8px';
-
-            const headElements = document.head.children;
-            let elementCount = 0;
-
-            Array.from(headElements).forEach((el, index) => {
-                const tagName = el.tagName.toLowerCase();
-                // 跳过脚本自身的元素
-                if (el.hasAttribute && el.hasAttribute(UI_CONFIG.MARKER_ATTR)) return;
-
-                // 只显示可修改的元素类型
-                const modifiableTags = ['meta', 'title', 'style', 'link', 'base', 'noscript', 'template'];
-                if (!modifiableTags.includes(tagName)) return;
-
-                elementCount++;
-                const item = document.createElement('div');
-                item.style.padding = '8px';
-                item.style.marginBottom = '8px';
-                item.style.backgroundColor = '#f8f9fa';
-                item.style.borderRadius = '4px';
-
-                const header = document.createElement('div');
-                header.style.display = 'flex';
-                header.style.justifyContent = 'space-between';
-                header.style.alignItems = 'center';
-                header.style.marginBottom = '5px';
-
-                const tagLabel = document.createElement('span');
-                tagLabel.textContent = `<${tagName}>`;
-                tagLabel.style.fontWeight = 'bold';
-                tagLabel.style.color = '#4285f4';
-                header.appendChild(tagLabel);
-
-                const attrsText = document.createElement('span');
-                const attrs = [];
-                for (let i = 0; i < el.attributes.length; i++) {
-                    const attr = el.attributes[i];
-                    attrs.push(`${attr.name}="${attr.value}"`);
-                }
-                attrsText.textContent = attrs.slice(0, 3).join(' ') + (attrs.length > 3 ? '...' : '');
-                attrsText.style.fontSize = '11px';
-                attrsText.style.color = '#666';
-                attrsText.style.fontFamily = 'Consolas, monospace';
-                attrsText.style.wordBreak = 'break-all';
-                header.appendChild(attrsText);
-                item.appendChild(header);
-
-                // 内容预览
-                if (el.textContent && el.textContent.trim()) {
-                    const contentPreview = document.createElement('div');
-                    contentPreview.textContent = el.textContent.substring(0, 100) + (el.textContent.length > 100 ? '...' : '');
-                    contentPreview.style.fontSize = '11px';
-                    contentPreview.style.color = '#888';
-                    contentPreview.style.fontFamily = 'Consolas, monospace';
-                    contentPreview.style.wordBreak = 'break-all';
-                    contentPreview.style.maxHeight = '40px';
-                    contentPreview.style.overflow = 'hidden';
-                    item.appendChild(contentPreview);
-                }
-
-                // 删除按钮
-                const deleteBtn = UIManager.createButton('删除', 'danger', () => {
-                    if (confirm(`确定要删除这个 <${tagName}> 元素吗？`)) {
-                        el.remove();
-                        this.showToast(`<${tagName}> 已删除`, 'success');
-                        this.showHeadTab(container);
-                    }
-                });
-                deleteBtn.style.padding = '4px 8px';
-                deleteBtn.style.fontSize = '11px';
-                item.appendChild(deleteBtn);
-
-                listContainer.appendChild(item);
-            });
-
-            if (elementCount === 0) {
-                const emptyMsg = document.createElement('p');
-                emptyMsg.textContent = '没有可修改的 Head 元素，或所有元素已由脚本创建';
-                emptyMsg.style.margin = '0';
-                emptyMsg.style.fontSize = '13px';
-                emptyMsg.style.color = '#999';
-                emptyMsg.style.textAlign = 'center';
-                listContainer.appendChild(emptyMsg);
-            }
 
             container.appendChild(listContainer);
         }
