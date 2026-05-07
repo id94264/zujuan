@@ -9,14 +9,14 @@
 // @grant       GM_registerMenuCommand
 // @grant       GM_download
 // @icon        
-// @version     3.6.30
+// @version     3.6.32
 // @author      AI & id94264
 // @description 允许隐藏和修改网页元素
 // @updateURL   https://github.com/id94264/zujuan/raw/main/PageElementTweaking.user.js
 // @downloadURL https://github.com/id94264/zujuan/raw/main/PageElementTweaking.user.js
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     // 存储键名
@@ -69,13 +69,53 @@
         escapeHtml: (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
         debounce: (func, delay) => {
             let timeout;
-            return function() {
+            return function () {
                 const context = this, args = arguments;
                 clearTimeout(timeout);
                 timeout = setTimeout(() => func.apply(context, args), delay);
             };
         },
-        escapeRegExp: (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        escapeRegExp: (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        isTouchDevice: () => {
+            return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        },
+        // 等待触屏滚动完全停止（处理 momentum 效果）
+        waitForScrollEnd: (element, callback) => {
+            if (!Utils.isTouchDevice()) {
+                callback(element.scrollTop);
+                return;
+            }
+            let momentumCheck = null;
+
+            const stopHandler = () => {
+                clearTimeout(momentumCheck);
+                // 等待 momentum 滚动完全停止（300ms 内没有滚动变化）
+                momentumCheck = setTimeout(() => {
+                    callback(element.scrollTop);
+                }, 300);
+            };
+
+            element.addEventListener('scroll', stopHandler, { passive: true });
+            element.addEventListener('touchend', stopHandler, { passive: true });
+
+            // 返回清理函数
+            return () => {
+                element.removeEventListener('scroll', stopHandler);
+                element.removeEventListener('touchend', stopHandler);
+                clearTimeout(momentumCheck);
+            };
+        },
+        // 获取安全的滚动位置（桌面和触屏通用）
+        getScrollPosition: (element) => {
+            if (Utils.isTouchDevice()) {
+                return new Promise((resolve) => {
+                    Utils.waitForScrollEnd(element, (scrollTop) => {
+                        resolve(scrollTop);
+                    });
+                });
+            }
+            return Promise.resolve(element.scrollTop);
+        }
     };
 
     // 存储管理器
@@ -157,7 +197,7 @@
 
             const modifications = StorageManager.getStyleModifications();
             const currentStyles = modifications[selector] || {};
-            const newStyles = {...currentStyles};
+            const newStyles = { ...currentStyles };
 
             Object.keys(styles).forEach(key => {
                 if (styles[key] && styles[key] !== '') {
@@ -565,7 +605,10 @@
             input.focus();
         }
 
-        static showHideTab(container) {
+        static showHideTab(container) {// 1. 尝试从现有的 listContainer 获取滚动位置，而不是外部 container
+            const oldList = container.querySelector('.list-container-hide'); // 我们给它加个类名
+            const savedScrollTop = oldList ? oldList.scrollTop : 0;
+
             // 清空容器内容
             container.innerHTML = '';
 
@@ -605,8 +648,8 @@
                 container.appendChild(emptyMsg);
                 return;
             }
-
             const listContainer = document.createElement('div');
+            listContainer.className = 'list-container-hide'; // 加上类名方便下次查找
             listContainer.style.maxHeight = '300px';
             listContainer.style.overflowY = 'auto';
             listContainer.style.border = '1px solid #e0e0e0';
@@ -653,9 +696,28 @@
                 editButton.style.fontSize = '12px';
 
                 const deleteButton = UIManager.createButton('删除', 'danger', () => {
-                    ElementModifier.removeHideModification(selector);
-                    ElementModifier.applyHideModifications();
-                    this.showHideTab(container);
+                    // 在删除前手动记录当前滚动位置（触屏适配）
+                    const captureScroll = () => {
+                        const currentScroll = listContainer.scrollTop;
+                        ElementModifier.removeHideModification(selector);
+                        ElementModifier.applyHideModifications();
+
+                        // 重新渲染
+                        this.showHideTab(container);
+
+                        // 渲染后立即恢复位置
+                        const newList = container.querySelector('.list-container-hide');
+                        if (newList) newList.scrollTop = currentScroll;
+                    };
+
+                    if (Utils.isTouchDevice()) {
+                        // 触屏设备：等待 momentum 滚动结束
+                        Utils.waitForScrollEnd(listContainer, () => {
+                            captureScroll();
+                        });
+                    } else {
+                        captureScroll();
+                    }
                 });
                 deleteButton.style.padding = '4px 8px';
                 deleteButton.style.fontSize = '12px';
@@ -669,6 +731,17 @@
             });
 
             container.appendChild(listContainer);
+
+            // 恢复滚动位置（桌面端同步恢复，触屏端等待稳定）
+            requestAnimationFrame(() => {
+                if (Utils.isTouchDevice()) {
+                    Utils.waitForScrollEnd(listContainer, (scrollPos) => {
+                        listContainer.scrollTop = scrollPos;
+                    });
+                } else {
+                    listContainer.scrollTop = savedScrollTop;
+                }
+            });
         }
 
         static showStyleTab(container) {
@@ -724,8 +797,8 @@
                 container.appendChild(emptyMsg);
                 return;
             }
-
             const listContainer = document.createElement('div');
+            listContainer.className = 'list-container-style';
             listContainer.style.maxHeight = '400px';
             listContainer.style.overflowY = 'auto';
             listContainer.style.border = '1px solid #e0e0e0';
@@ -778,10 +851,24 @@
                 // 删除按钮
                 const deleteButton = UIManager.createButton('删除', 'danger', () => {
                     if (confirm(`确定要删除 ${selector} 的所有样式修改吗？`)) {
-                        ElementModifier.removeStyleModification(selector);
-                        ElementModifier.applyStyleModifications();
-                        this.showToast('样式修改已删除', 'success');
-                        this.showStyleTab(container);
+                        // 触屏适配：等待滚动结束后再保存位置
+                        const performDelete = () => {
+                            const currentScroll = listContainer.scrollTop;
+                            ElementModifier.removeStyleModification(selector);
+                            ElementModifier.applyStyleModifications();
+                            this.showToast('样式修改已删除', 'success');
+
+                            this.showStyleTab(container);
+
+                            const newList = container.querySelector('.list-container-style');
+                            if (newList) newList.scrollTop = currentScroll;
+                        };
+
+                        if (Utils.isTouchDevice()) {
+                            Utils.waitForScrollEnd(listContainer, performDelete);
+                        } else {
+                            performDelete();
+                        }
                     }
                 });
                 deleteButton.style.padding = '5px 10px';
@@ -795,6 +882,17 @@
             });
 
             container.appendChild(listContainer);
+
+            // 恢复滚动位置到 listContainer（桌面端同步恢复，触屏端等待稳定）
+            requestAnimationFrame(() => {
+                if (Utils.isTouchDevice()) {
+                    Utils.waitForScrollEnd(listContainer, (scrollPos) => {
+                        listContainer.scrollTop = scrollPos;
+                    });
+                } else {
+                    listContainer.scrollTop = savedScrollTop;
+                }
+            });
         }
 
         static showStyleEditor(selector, styles, onSaveCallback) {
@@ -1414,7 +1512,7 @@
                                 const currentStyles = modifications[selector] || {};
 
                                 // 创建新的样式对象，不包含要删除的属性
-                                const newStyles = {...currentStyles};
+                                const newStyles = { ...currentStyles };
                                 delete newStyles[prop];
 
                                 if (Object.keys(newStyles).length === 0) {
@@ -1493,7 +1591,7 @@
                     exportedAt: new Date().toISOString()
                 };
 
-                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
 
                 GM_download({
@@ -1525,7 +1623,7 @@
                 const file = fileInput.files[0];
                 const reader = new FileReader();
 
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     try {
                         const data = JSON.parse(e.target.result);
 
@@ -1607,7 +1705,7 @@
                     exportedAt: new Date().toISOString()
                 };
 
-                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
 
                 GM_download({
@@ -1634,7 +1732,7 @@
                 const file = fileInput.files[0];
                 const reader = new FileReader();
 
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     try {
                         const data = JSON.parse(e.target.result);
                         let importedMods = {};
@@ -1655,7 +1753,7 @@
 
                         if (confirm(`确定要导入 ${Object.keys(importedMods).length} 个默认修改吗？`)) {
                             const currentMods = StorageManager.getDefaultModifications();
-                            const mergedMods = {...currentMods, ...importedMods};
+                            const mergedMods = { ...currentMods, ...importedMods };
                             StorageManager.saveDefaultModifications(mergedMods);
                             this.showToast('导入成功！', 'success');
                             this.showDefaultModificationsTab(container);
